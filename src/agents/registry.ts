@@ -1,11 +1,13 @@
 import type { AgentId } from "../types.js";
 import { ConfigKitError } from "../errors.js";
 import { claudeAdapter } from "./claude.js";
+import { codexAdapter } from "./codex.js";
 import { piAdapter } from "./pi.js";
 import type { AgentAdapter } from "./types.js";
 
 const ADAPTERS: Partial<Record<AgentId, AgentAdapter>> = {
   "claude-code": claudeAdapter,
+  codex: codexAdapter,
   pi: piAdapter,
 };
 
