@@ -14,9 +14,9 @@
       "status": "installed"
     },
     "gemini-cli": {
-      "version": null,
+      "version": "0.68.0",
       "command": "gemini --version",
-      "status": "not-installed"
+      "status": "installed"
     },
     "opencode": {
       "version": "2.2.6",

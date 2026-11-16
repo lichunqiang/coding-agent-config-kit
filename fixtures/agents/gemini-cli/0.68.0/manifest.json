@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
   "agent": "gemini-cli",
-  "version": "unpinned",
+  "version": "0.68.0",
   "variant": "default",
-  "status": "not-installed",
+  "status": "installed-version",
   "configOrigin": "synthetic-native-fixture",
   "capturedAt": "2026-11-16",
   "platform": "darwin",
   "capture": {
     "command": "gemini --version",
-    "output": null
+    "output": "0.68.0"
   },
-  "notes": "Gemini CLI is not installed on the capture machine. The fixture exercises the documented native settings/.env shape and stays unpinned until a real capture replaces it.",
+  "notes": "CLI installed from npm (@google/gemini-cli 0.68.0) and version observed with a temporary home; settings/.env use synthetic values in the native schema. Docs bundled with 0.68.0 confirm model.name, GEMINI_CLI_HOME and GOOGLE_GEMINI_BASE_URL.",
   "assertions": {
     "preserveText": ["keep-gemini-marker", "KEEP_VAR", "dark"],
     "expectText": ["GOOGLE_GEMINI_BASE_URL", "fixture-model"]

@@ -91,10 +91,11 @@ adapter writes the right shape and stays idempotent without committing user
 configuration:
 
 - versions captured on 2026-11-16 (Darwin): Claude Code `2.1.322`, Codex
-  `0.167.1`, OpenCode `2.2.6` (V1 and V2), Pi `1.5.2`, DeepSeek Harness
-  `0.2.2-rc.3`;
-- Gemini CLI was not installed, so its fixture is `unpinned` and explicitly
-  marked `not-installed`.
+  `0.167.1`, Gemini CLI `0.68.0`, OpenCode `2.2.6` (V1 and V2), Pi `1.5.2`,
+  DeepSeek Harness `0.2.2-rc.3`;
+- Gemini CLI `0.68.0` was installed from `@google/gemini-cli` for this capture;
+  the bundled 0.68.0 docs confirm `model.name`, `GEMINI_CLI_HOME` and
+  `GOOGLE_GEMINI_BASE_URL`.
 
 ```sh
 pnpm test:acceptance   # runs the fixture matrix
