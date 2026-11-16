@@ -4,6 +4,7 @@ import { claudeAdapter } from "./claude.js";
 import { codexAdapter } from "./codex.js";
 import { dshAdapter } from "./dsh.js";
 import { geminiAdapter } from "./gemini.js";
+import { opencodeAdapter } from "./opencode.js";
 import { piAdapter } from "./pi.js";
 import type { AgentAdapter } from "./types.js";
 
@@ -12,6 +13,7 @@ const ADAPTERS: Partial<Record<AgentId, AgentAdapter>> = {
   codex: codexAdapter,
   "gemini-cli": geminiAdapter,
   "deepseek-harness": dshAdapter,
+  opencode: opencodeAdapter,
   pi: piAdapter,
 };
 

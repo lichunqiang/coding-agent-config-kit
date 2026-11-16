@@ -4,9 +4,9 @@ Plan and safely apply third-party provider/model configuration for coding
 agents. The design contract lives in
 [docs/technical-design-v1.md](docs/technical-design-v1.md).
 
-> Status: **Pi** and **Claude Code** adapters work end to end
-> (`resolveAndPlan`, `apply`, `inspectRecovery`, `recover`). The other four
-> adapters are still pending.
+> Status: all six adapters are implemented and covered end to end
+> (`resolveAndPlan`, `apply`, `inspectRecovery`, `recover`), with the
+> limitations below.
 
 ## Install
 
@@ -65,9 +65,9 @@ planning. `inspectRecovery()` and `recover()` handle interrupted commits.
 - [x] Model discovery (OpenAI / Anthropic / Google formats, pagination)
 - [x] models.dev snapshot by default, explicit live mode with fallback
 - [x] Field-level capability resolution and projectability
-- [x] Pi and Claude Code adapters and the `defaultModel` add-on
+- [x] Pi, Claude Code, Codex, Gemini CLI, OpenCode and DeepSeek Harness adapters
 - [x] End-to-end `resolveAndPlan` / `apply` / `inspectRecovery` / `recover`
-- [ ] Codex, Gemini CLI, OpenCode, DeepSeek Harness adapters
+- [ ] OpenCode V1 configs (detected and refused rather than migrated)
 - [ ] Full platform matrix for permissions and recovery
 
 ## Development
@@ -82,3 +82,15 @@ pnpm check   # all of the above
 
 CI runs typecheck, tests and build on macOS, Windows and Linux with Node 20
 and 22.
+
+## Known limitations
+
+- OpenCode V1 (`provider`) configs are detected and refused with
+  `TARGET_VERSION_CONFLICT`; only the current V2 (`providers`) shape is written.
+- The default model add-on requires an existing `agent-default-model` entry for
+  DeepSeek Harness; it does not create a new profile entry.
+- Pi, Claude Code, Codex, Gemini CLI and OpenCode expose env-reference or
+  agent-file credential placement as their native formats allow; external-env is
+  limited to Claude Code and Gemini CLI.
+- Windows permissions rely on the inherited user-directory ACL; no system ACL
+  APIs are called.
