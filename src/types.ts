@@ -133,6 +133,10 @@ export interface NetworkPolicy {
   timeoutMs?: number;
   maxResponseBytes?: number;
   maxPages?: number;
+  /** Proxy URL for discovery. Not implemented yet; setting it is refused. */
+  proxyUrl?: string;
+  /** Custom CA bundle for discovery. Not implemented yet; setting it is refused. */
+  ca?: string;
 }
 
 export interface DiscoverySpec {
@@ -247,6 +251,7 @@ export interface TargetPreview {
   configDir: string;
   profile?: string;
   files: string[];
+  agentVersion?: string;
 }
 
 export interface ProviderPreview {

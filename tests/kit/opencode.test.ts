@@ -73,7 +73,11 @@ describe("OpenCode V2 adapter", () => {
     expect(provider).toMatchObject({
       name: "company",
       env: ["TEST_KEY"],
-      package: "@ai-sdk/openai-compatible",
+      package: "aisdk:@ai-sdk/openai-compatible",
+      settings: {
+        baseURL: "https://api.example.com/v1",
+        apiKey: "{env:TEST_KEY}",
+      },
     });
     expect(provider.models.m1).toMatchObject({
       name: "m1",
@@ -91,17 +95,40 @@ describe("OpenCode V2 adapter", () => {
     expect((await kit.apply(await kit.resolveAndPlan(request()))).status).toBe("unchanged");
   });
 
-  it("refuses a V1 config", async () => {
-    await writeFile(
-      join(dir, "opencode.json"),
-      JSON.stringify({ provider: { company: {} } }),
-      "utf8",
-    );
+  it("writes the V1 provider shape when the config is V1", async () => {
+    await writeFile(join(dir, "opencode.json"), JSON.stringify({ provider: {} }), "utf8");
     const plan = await kit.resolveAndPlan(request());
-    expect(plan.preview.blockers).toContainEqual(
-      expect.objectContaining({ code: "TARGET_VERSION_CONFLICT" }),
+    expect(plan.preview.blockers).toEqual([]);
+    expect((await kit.apply(plan)).status).toBe("applied");
+
+    const parsed = await config();
+    expect(parsed.model).toBe("company/m1");
+    const provider = parsed.provider.company;
+    expect(provider).toMatchObject({
+      name: "company",
+      npm: "@ai-sdk/openai-compatible",
+      api: "https://api.example.com/v1",
+      options: { apiKey: "{env:TEST_KEY}" },
+    });
+    expect(provider.models.m1).toMatchObject({
+      name: "m1",
+      limit: { context: 64_000, output: 8_000 },
+      modalities: { input: ["text", "pdf"], output: ["text"] },
+      reasoning: true,
+      tool_call: true,
+    });
+
+    expect((await kit.apply(await kit.resolveAndPlan(request()))).status).toBe("unchanged");
+  });
+
+  it("requires context and output limits for V1 models", async () => {
+    await writeFile(join(dir, "opencode.json"), JSON.stringify({ provider: {} }), "utf8");
+    const plan = await kit.resolveAndPlan(
+      request({ models: { fallbackIds: ["m1"] } }),
     );
-    expect((await kit.apply(plan)).status).toBe("failed");
+    expect(plan.preview.blockers).toContainEqual(
+      expect.objectContaining({ code: "REQUIRED_MODEL_FIELD_MISSING" }),
+    );
   });
 
   it("refuses a config with both provider and providers", async () => {

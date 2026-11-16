@@ -203,6 +203,12 @@ async function probeVersion(
         stdio: ["ignore", "pipe", "ignore"],
         timeout: 2_000,
         windowsHide: true,
+        // Do not leak the SDK process environment (which may hold credentials)
+        // into a target executable.
+        env:
+          process.platform === "win32"
+            ? { SystemRoot: process.env.SystemRoot ?? "" }
+            : {},
       });
     } catch (error) {
       warnings.push({

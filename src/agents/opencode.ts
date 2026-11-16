@@ -20,7 +20,7 @@ import {
 } from "../editing/json.js";
 import type { AgentAdapter, AgentBuildInput, AgentPlan, PlannedFile } from "./types.js";
 
-const PACKAGE_BY_PROTOCOL: Record<Protocol, string> = {
+const NPM_BY_PROTOCOL: Record<Protocol, string> = {
   "openai-completions": "@ai-sdk/openai-compatible",
   "openai-responses": "@ai-sdk/openai",
   "anthropic-messages": "@ai-sdk/anthropic",
@@ -53,15 +53,6 @@ export const opencodeAdapter: AgentAdapter = {
     const before = await readText(configPath);
     const root = asJsonObject(parseJsonText(before ?? "", configPath), configPath);
     const format = detectFormat(root, input);
-    if (format === "v1") {
-      blockers.push({
-        code: "TARGET_VERSION_CONFLICT",
-        severity: "error",
-        message:
-          "OpenCode V1 (provider) config is not supported by this build; migrate to V2 providers",
-        path: configPath,
-      });
-    }
     if (format === "both") {
       blockers.push({
         code: "TARGET_VERSION_CONFLICT",
@@ -80,10 +71,12 @@ export const opencodeAdapter: AgentAdapter = {
     const intents: IntentPreview[] = [];
     const redactions: string[] = [];
     let after = before ?? "";
-    const usable = format === "v2";
+    const usable = format !== "both";
+    const v2 = format === "v2";
+    const rootKey = v2 ? "providers" : "provider";
 
     if (provider !== undefined && providerId !== undefined && usable) {
-      const providersValue = getJsonPath(root, ["providers"]);
+      const providersValue = getJsonPath(root, [rootKey]);
       const providers =
         providersValue === undefined ? {} : asJsonObject(providersValue, configPath);
       const existing = providers[providerId];
@@ -108,30 +101,61 @@ export const opencodeAdapter: AgentAdapter = {
         } else {
           const existingObject =
             existing !== undefined && isRecord(existing) ? existing : {};
-          const nextProvider: Record<string, unknown> = {
-            ...existingObject,
-            name: provider.displayName ?? providerId,
-            env: [placement.envVar],
-            package: PACKAGE_BY_PROTOCOL[provider.protocol],
-            models: mergeModels({
-              existing: isRecord(existingObject.models) ? existingObject.models : {},
-              models: input.models,
-              metadataMode: input.metadataMode,
-              strict: input.strict,
-              confirmDeletions: input.confirmDeletions,
-              completeness: input.discoveryCompleteness,
-              usedFallback: input.usedFallback,
-              warnings,
-            }),
-          };
-          after = setJsonPath(after, ["providers", providerId], nextProvider);
+          const npm = NPM_BY_PROTOCOL[provider.protocol];
+          const nextProvider: Record<string, unknown> = v2
+            ? {
+                ...existingObject,
+                name: provider.displayName ?? providerId,
+                env: [placement.envVar],
+                package: `aisdk:${npm}`,
+                settings: {
+                  ...(isRecord(existingObject.settings) ? existingObject.settings : {}),
+                  baseURL: provider.baseUrl,
+                  apiKey: `{env:${placement.envVar}}`,
+                },
+                models: mergeModels({
+                  existing: isRecord(existingObject.models) ? existingObject.models : {},
+                  models: input.models,
+                  metadataMode: input.metadataMode,
+                  strict: input.strict,
+                  confirmDeletions: input.confirmDeletions,
+                  completeness: input.discoveryCompleteness,
+                  usedFallback: input.usedFallback,
+                  warnings,
+                }),
+              }
+            : {
+                ...existingObject,
+                name: provider.displayName ?? providerId,
+                npm,
+                api: provider.baseUrl,
+                options: {
+                  ...(isRecord(existingObject.options) ? existingObject.options : {}),
+                  apiKey: `{env:${placement.envVar}}`,
+                },
+                models: mergeModelsV1({
+                  existing: isRecord(existingObject.models) ? existingObject.models : {},
+                  models: input.models,
+                  metadataMode: input.metadataMode,
+                  strict: input.strict,
+                  confirmDeletions: input.confirmDeletions,
+                  completeness: input.discoveryCompleteness,
+                  usedFallback: input.usedFallback,
+                  warnings,
+                  blockers,
+                }),
+              };
+          after = setJsonPath(after, [rootKey, providerId], nextProvider);
           nextState.entries[stateKey] = {
             kind: "provider",
-            fields: ["name", "env", "package", "models"],
+            fields: v2
+              ? ["name", "env", "package", "settings", "models"]
+              : ["name", "npm", "api", "options", "models"],
             baseline: {
               baseUrl: provider.baseUrl,
               envVar: placement.envVar,
               modelIds: input.models.map((model) => model.requestId),
+              format,
             },
           };
           intents.push({
@@ -141,7 +165,7 @@ export const opencodeAdapter: AgentAdapter = {
           warnings.push({
             code: "OPENCODE_PACKAGE_ASSUMED",
             severity: "warning",
-            message: `Assumed package ${PACKAGE_BY_PROTOCOL[provider.protocol]} for ${provider.protocol}`,
+            message: `Assumed package ${v2 ? `aisdk:${npm}` : npm} for ${provider.protocol}`,
           });
         }
       }
@@ -194,7 +218,7 @@ export const opencodeAdapter: AgentAdapter = {
         });
         continue;
       }
-      after = deleteJsonPath(after, ["providers", removeId]);
+      after = deleteJsonPath(after, [rootKey, removeId]);
       delete nextState.entries[stateKey];
       const currentDefault = readDefaultModel(root);
       if (currentDefault.startsWith(`${removeId}/`)) {
@@ -220,11 +244,11 @@ export const opencodeAdapter: AgentAdapter = {
         });
         continue;
       }
-      const existing = getJsonPath(root, ["providers", removeProviderId, "models"]);
+      const existing = getJsonPath(root, [rootKey, removeProviderId, "models"]);
       if (isRecord(existing)) {
         const kept = { ...existing };
         for (const modelId of modelIds) delete kept[modelId];
-        after = setJsonPath(after, ["providers", removeProviderId, "models"], kept);
+        after = setJsonPath(after, [rootKey, removeProviderId, "models"], kept);
         intents.push({
           kind: "removeModel",
           summary: `Remove ${modelIds.length} model(s) from ${removeProviderId}`,
@@ -309,6 +333,78 @@ interface MergeModelsInput {
   completeness: "complete" | "partial" | "unknown";
   usedFallback: boolean;
   warnings: Diagnostic[];
+}
+
+interface MergeModelsV1Input extends MergeModelsInput {
+  blockers: Diagnostic[];
+}
+
+function mergeModelsV1(input: MergeModelsV1Input): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...input.existing };
+  const incoming = new Set(input.models.map((model) => model.requestId));
+
+  for (const model of input.models) {
+    const base = isRecord(next[model.requestId])
+      ? (next[model.requestId] as Record<string, unknown>)
+      : {};
+    const context = model.capabilities.contextWindow;
+    const output = model.capabilities.maxOutputTokens;
+    if (context === undefined || output === undefined) {
+      input.blockers.push({
+        code: "REQUIRED_MODEL_FIELD_MISSING",
+        severity: "error",
+        message: `OpenCode V1 requires contextWindow and maxOutputTokens for ${model.requestId}`,
+        field: model.requestId,
+      });
+      continue;
+    }
+
+    const limit: Record<string, number> = isRecord(base.limit)
+      ? ({ ...base.limit } as Record<string, number>)
+      : {};
+    if (writable(context.source, input.metadataMode)) limit.context = context.value;
+    if (writable(output.source, input.metadataMode)) limit.output = output.value;
+
+    const modalities: Record<string, unknown> = isRecord(base.modalities)
+      ? { ...base.modalities }
+      : {};
+    const inputModalities = model.capabilities.inputModalities;
+    if (
+      inputModalities !== undefined &&
+      writable(inputModalities.source, input.metadataMode)
+    ) {
+      modalities.input = [...inputModalities.value];
+    }
+    if (!Array.isArray(modalities.output)) modalities.output = ["text"];
+
+    const nextModel: Record<string, unknown> = {
+      ...base,
+      name: model.displayName,
+      limit,
+      modalities,
+    };
+    const reasoning = model.capabilities.reasoning;
+    if (reasoning !== undefined && writable(reasoning.source, input.metadataMode)) {
+      nextModel.reasoning = reasoning.value;
+    }
+    const tools = model.capabilities.toolCalling;
+    if (tools !== undefined && writable(tools.source, input.metadataMode)) {
+      nextModel.tool_call = tools.value;
+    }
+    next[model.requestId] = nextModel;
+  }
+
+  if (
+    input.strict &&
+    input.confirmDeletions &&
+    input.completeness === "complete" &&
+    !input.usedFallback
+  ) {
+    for (const id of Object.keys(next)) {
+      if (!incoming.has(id)) delete next[id];
+    }
+  }
+  return next;
 }
 
 function mergeModels(input: MergeModelsInput): Record<string, unknown> {

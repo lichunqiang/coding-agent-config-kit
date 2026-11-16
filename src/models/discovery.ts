@@ -1,3 +1,5 @@
+import { Agent, ProxyAgent, type Dispatcher } from "undici";
+
 import { ConfigKitError } from "../errors.js";
 import type {
   DiscoveryEndpoint,
@@ -50,7 +52,13 @@ export async function discoverModels(
   assertNetworkAllowed(endpoint, network);
 
   const format = options.responseFormat ?? defaultFormat(options.protocol);
-  const headers = authHeaders(options.protocol, options.apiKey, options.credential ?? { kind: "use-provider" });
+  const credential = options.credential ?? { kind: "use-provider" };
+  const sameOrigin = new URL(endpoint).origin === new URL(options.baseUrl).origin;
+  // A provider credential never crosses origins; a separately supplied
+  // discovery credential may, because the caller explicitly chose it.
+  const discoveryKey =
+    sameOrigin || credential.kind === "reference" ? options.apiKey : undefined;
+  const headers = authHeaders(options.protocol, discoveryKey, credential);
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const maxPages = network.maxPages ?? DEFAULT_MAX_PAGES;
   const maxBytes = network.maxResponseBytes ?? DEFAULT_MAX_BYTES;
@@ -70,6 +78,8 @@ export async function discoverModels(
       headers,
       timeoutMs,
       maxBytes,
+      network,
+      useDispatcher: options.fetchImpl === undefined,
     });
 
     if (isCustomFormat(format)) {
@@ -230,16 +240,21 @@ async function fetchPage(
     headers: Record<string, string>;
     timeoutMs: number;
     maxBytes: number;
+    network: NetworkPolicy;
+    useDispatcher: boolean;
   },
 ): Promise<unknown> {
+  const dispatcher = options.useDispatcher ? createDispatcher(options.network) : undefined;
   let response: Response;
   try {
-    response = await options.fetchImpl(url, {
+    const init: Record<string, unknown> = {
       method: "GET",
       headers: options.headers,
       redirect: "manual",
       signal: AbortSignal.timeout(options.timeoutMs),
-    });
+    };
+    if (dispatcher !== undefined) init.dispatcher = dispatcher;
+    response = await options.fetchImpl(url, init as unknown as RequestInit);
   } catch (error) {
     throw new ConfigKitError({
       code: "MODEL_DISCOVERY_FAILED",
@@ -278,6 +293,7 @@ async function fetchPage(
   }
 
   const text = await response.text();
+  if (dispatcher !== undefined) await dispatcher.close();
   if (Buffer.byteLength(text, "utf8") > options.maxBytes) {
     throw new ConfigKitError({
       code: "MODEL_DISCOVERY_FAILED",
@@ -298,6 +314,12 @@ async function fetchPage(
       cause: error,
     });
   }
+}
+
+function createDispatcher(network: NetworkPolicy): Dispatcher | undefined {
+  if (network.proxyUrl !== undefined) return new ProxyAgent(network.proxyUrl);
+  if (network.ca !== undefined) return new Agent({ connect: { ca: network.ca } });
+  return undefined;
 }
 
 function parsePage(

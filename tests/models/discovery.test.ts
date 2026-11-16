@@ -130,6 +130,29 @@ describe("discoverModels", () => {
     expect(calls[0]?.headers.authorization).toBe("Bearer secret");
   });
 
+  it("does not send provider credentials to a cross-origin catalog", async () => {
+    const { fetchImpl, calls } = fakeFetch([() => json({ data: [] })]);
+    await discoverModels({
+      baseUrl: "https://api.example.com/v1",
+      protocol: "openai-completions",
+      apiKey: "provider-secret",
+      endpoint: { kind: "absolute-url", url: "https://catalog.example.com/models" },
+      fetchImpl,
+    });
+    expect(calls[0]?.headers.authorization).toBeUndefined();
+
+    const explicit = fakeFetch([() => json({ data: [] })]);
+    await discoverModels({
+      baseUrl: "https://api.example.com/v1",
+      protocol: "openai-completions",
+      apiKey: "catalog-secret",
+      credential: { kind: "reference", id: "catalog" },
+      endpoint: { kind: "absolute-url", url: "https://catalog.example.com/models" },
+      fetchImpl: explicit.fetchImpl,
+    });
+    expect(explicit.calls[0]?.headers.authorization).toBe("Bearer catalog-secret");
+  });
+
   it("follows Anthropic pagination", async () => {
     const { fetchImpl, calls } = fakeFetch([
       () => json({ data: [{ id: "a", display_name: "A" }], has_more: true, last_id: "a" }),
@@ -194,6 +217,22 @@ describe("discoverModels", () => {
         fetchImpl,
       }),
     ).rejects.toMatchObject({ code: "MODEL_DISCOVERY_FAILED" });
+  });
+
+  it("accepts proxy and custom CA options", async () => {
+    for (const network of [
+      { proxyUrl: "http://proxy.example:8080" },
+      { ca: "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----" },
+    ]) {
+      const { fetchImpl } = fakeFetch([() => json({ data: [{ id: "m" }] })]);
+      const result = await discoverModels({
+        baseUrl: "https://api.example.com/v1",
+        protocol: "openai-completions",
+        network,
+        fetchImpl,
+      });
+      expect(result.entries[0]?.requestId).toBe("m");
+    }
   });
 
   it("rejects oversized responses", async () => {

@@ -65,10 +65,9 @@ planning. `inspectRecovery()` and `recover()` handle interrupted commits.
 - [x] Model discovery (OpenAI / Anthropic / Google formats, pagination)
 - [x] models.dev snapshot by default, explicit live mode with fallback
 - [x] Field-level capability resolution and projectability
-- [x] Pi, Claude Code, Codex, Gemini CLI, OpenCode and DeepSeek Harness adapters
+- [x] Pi, Claude Code, Codex, Gemini CLI, OpenCode (V1 and V2) and DeepSeek Harness adapters
 - [x] End-to-end `resolveAndPlan` / `apply` / `inspectRecovery` / `recover`
-- [ ] OpenCode V1 configs (detected and refused rather than migrated)
-- [ ] Full platform matrix for permissions and recovery
+- [ ] Full platform matrix for permissions and recovery edge cases
 
 ## Development
 
@@ -83,14 +82,41 @@ pnpm check   # all of the above
 CI runs typecheck, tests and build on macOS, Windows and Linux with Node 20
 and 22.
 
+## Adapters
+
+| Agent | Files written | Credential placements |
+| --- | --- | --- |
+| Pi | `models.json`, `settings.json` | `env-reference`, `agent-file` |
+| Claude Code | `settings.json` (`env` block) | `external-env`, `agent-file` |
+| Codex | `config.toml` | `env-reference` (`env_key`) |
+| Gemini CLI | `settings.json`, `.env` | `external-env`, `agent-file` |
+| OpenCode | `opencode.json(c)` V1 `provider` or V2 `providers` | `env-reference` |
+| DeepSeek Harness | profile `cordis.patch.yml` | `env-reference` |
+
+The default model add-on uses each agent's native semantics: four `ANTHROPIC_*`
+fields for Claude Code, `defaultProvider`/`defaultModel` plus `enabledModels`
+for Pi, `model`/`model_provider` for Codex, `model.name` for Gemini CLI,
+`provider/model` for OpenCode, and the `agent-default-model` entry for DSH.
+
 ## Known limitations
 
-- OpenCode V1 (`provider`) configs are detected and refused with
-  `TARGET_VERSION_CONFLICT`; only the current V2 (`providers`) shape is written.
+- OpenCode V2 writes the `aisdk:` package form plus `settings.baseURL` and
+  `settings.apiKey`; the package mapping is an explicit assumption reported as a
+  warning.
+- OpenCode V1 requires `contextWindow` and `maxOutputTokens`; a model without
+  both is refused with `REQUIRED_MODEL_FIELD_MISSING`.
 - The default model add-on requires an existing `agent-default-model` entry for
   DeepSeek Harness; it does not create a new profile entry.
-- Pi, Claude Code, Codex, Gemini CLI and OpenCode expose env-reference or
-  agent-file credential placement as their native formats allow; external-env is
-  limited to Claude Code and Gemini CLI.
+- Pi, Claude Code, Codex, Gemini CLI, OpenCode and DSH expose the credential
+  placements listed above; unsupported placements fail during planning.
 - Windows permissions rely on the inherited user-directory ACL; no system ACL
   APIs are called.
+- Discovery supports `network.proxyUrl` (HTTP proxy) and `network.ca` (PEM
+  bundle) through an undici dispatcher; both are not exercised against a real
+  proxy or private CA in CI.
+
+When strict sync would delete models, pass `confirmDeletions: true`:
+
+```ts
+await kit.apply(plan, { confirmDeletions: true });
+```

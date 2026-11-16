@@ -86,9 +86,11 @@ interface InternalPlan {
   deletions: string[];
   credentialSource?: CredentialSource;
   credentialHash?: string;
+  envCredential?: { envVar: string; hash: string };
   warnings: Diagnostic[];
   blockers: Diagnostic[];
   effects: AgentPlan["effects"];
+  kitToken: symbol;
 }
 
 class PlanImpl implements Plan {
@@ -129,6 +131,8 @@ export function createConfigKit(options: ConfigKitOptions): ConfigKit {
 }
 
 class ConfigKitImpl implements ConfigKit {
+  private readonly token = Symbol("coding-agent-config-kit-instance");
+
   constructor(private readonly options: ConfigKitOptions) {}
 
   async resolveAndPlan(request: ResolveAndPlanRequest): Promise<Plan> {
@@ -362,6 +366,18 @@ class ConfigKitImpl implements ConfigKit {
             hash: sha256(providerSecret),
           }
         : undefined;
+    const envPlacement = request.provider?.credential.placement;
+    const envValue =
+      envPlacement !== undefined &&
+      (envPlacement.kind === "env-reference" || envPlacement.kind === "external-env")
+        ? request.target.launchEnvironment?.[envPlacement.envVar]
+        : undefined;
+    const envCredential =
+      envPlacement !== undefined &&
+      (envPlacement.kind === "env-reference" || envPlacement.kind === "external-env") &&
+      envValue !== undefined
+        ? { envVar: envPlacement.envVar, hash: sha256(envValue) }
+        : undefined;
 
     return new PlanImpl(preview, {
       adapter,
@@ -375,9 +391,11 @@ class ConfigKitImpl implements ConfigKit {
       ...(credential === undefined
         ? {}
         : { credentialSource: credential.source, credentialHash: credential.hash }),
+      ...(envCredential === undefined ? {} : { envCredential }),
       warnings,
       blockers,
       effects: adapterPlan.effects,
+      kitToken: this.token,
     });
   }
 
@@ -390,6 +408,13 @@ class ConfigKitImpl implements ConfigKit {
       });
     }
     const internal = plan.take();
+    if (internal.kitToken !== this.token) {
+      throw new ConfigKitError({
+        code: "UNSAFE_TARGET",
+        message: "This plan belongs to a different SDK instance",
+        phase: "validate",
+      });
+    }
 
     if (internal.blockers.length > 0) {
       return failedResult(internal.blockers[0]!, [], internal.warnings);
@@ -766,6 +791,19 @@ class ConfigKitImpl implements ConfigKit {
         });
       }
     }
+    if (internal.envCredential !== undefined) {
+      const current =
+        internal.request.target.launchEnvironment?.[internal.envCredential.envVar];
+      if (current === undefined || sha256(current) !== internal.envCredential.hash) {
+        throw new ConfigKitError({
+          code: "CREDENTIAL_MISMATCH",
+          message: `Launch environment value for ${internal.envCredential.envVar} changed since planning`,
+          agent: internal.request.agent,
+          phase: "commit",
+          replanRequired: true,
+        });
+      }
+    }
   }
 
   private async resolveSource(source: CredentialSource): Promise<string> {
@@ -852,6 +890,9 @@ function buildPreview(input: {
     configDir: input.resolved.configDir,
     files: input.adapterPlan.files.map((file) => file.path),
     ...(input.resolved.profile === undefined ? {} : { profile: input.resolved.profile }),
+    ...(input.resolved.agentVersion === undefined
+      ? {}
+      : { agentVersion: input.resolved.agentVersion }),
   };
 
   const changes: FileChangePreview[] = input.adapterPlan.files.map((file) => {

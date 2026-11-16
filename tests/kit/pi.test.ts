@@ -126,6 +126,57 @@ describe("Pi vertical slice", () => {
     expect(await readFile(join(dir, "models.json"), "utf8")).toBe('{"external":true}\n');
   });
 
+  it("rejects a launch-environment credential that changed after planning", async () => {
+    const req = request();
+    const plan = await kit.resolveAndPlan(req);
+    req.target.launchEnvironment!.TEST_KEY = "changed";
+    const result = await kit.apply(plan);
+    expect(result.status).toBe("failed");
+    expect(result.error?.code).toBe("CREDENTIAL_MISMATCH");
+  });
+
+  it("refuses a plan created by another SDK instance", async () => {
+    const other = createConfigKit({
+      ownerId: "owner",
+      resolveCredential: () => "secret",
+      lock: { timeoutMs: 300 },
+    });
+    const plan = await other.resolveAndPlan(request());
+    await expect(kit.apply(plan)).rejects.toMatchObject({ code: "UNSAFE_TARGET" });
+  });
+
+  it("detects a configDir/launchEnvironment mismatch", async () => {
+    const plan = await kit.resolveAndPlan(
+      request({
+        target: {
+          configDir: dir,
+          launchEnvironment: { PI_CODING_AGENT_DIR: join(dir, "other"), TEST_KEY: "x" },
+        },
+      }),
+    );
+    expect(plan.preview.blockers).toContainEqual(
+      expect.objectContaining({ code: "TARGET_ENV_MISMATCH" }),
+    );
+    expect((await kit.apply(plan)).status).toBe("failed");
+  });
+
+  it("refuses to apply while a recovery record exists", async () => {
+    const plan = await kit.resolveAndPlan(request());
+    await writeJournal(kitPaths(dir).recovery, {
+      schemaVersion: 1,
+      transactionId: "tx",
+      ownerId: "owner",
+      agent: "pi",
+      configDir: dir,
+      status: "prepared",
+      createdAt: new Date().toISOString(),
+      files: [],
+    });
+    const result = await kit.apply(plan);
+    expect(result.status).toBe("recovery-required");
+    expect(result.error?.code).toBe("RECOVERY_REQUIRED");
+  });
+
   it("returns locked when the target lock is held", async () => {
     const plan = await kit.resolveAndPlan(request());
     const lockPath = kitPaths(dir).lock;
