@@ -37,9 +37,14 @@ export interface ModelCapabilities {
   toolCalling?: Sourced<boolean>;
 }
 
-export type ModelCapabilityOverrides = {
-  [K in CapabilityName]?: ModelCapabilities[K] extends Sourced<infer T> ? T : never;
-};
+export interface ModelCapabilityOverrides {
+  contextWindow?: number;
+  maxOutputTokens?: number;
+  reasoning?: boolean;
+  reasoningEfforts?: string[];
+  inputModalities?: string[];
+  toolCalling?: boolean;
+}
 
 export interface ResolvedModel {
   requestId: string;
@@ -104,7 +109,12 @@ export type DiscoveryResponseFormat =
   | "openai-model-list"
   | "anthropic-model-list"
   | "google-model-list"
-  | { kind: "custom"; name: string; parse: (body: unknown) => NormalizedModelEntry[] };
+  | {
+      kind: "custom";
+      name: string;
+      parse: (body: unknown) => NormalizedModelEntry[];
+      completeness?: "complete" | "partial" | "unknown";
+    };
 
 export interface NormalizedModelEntry {
   requestId: string;
