@@ -287,7 +287,7 @@ export interface DiscoveryPreview {
 }
 
 export interface IntentPreview {
-  kind: SemanticIntent["kind"];
+  kind: string;
   summary: string;
 }
 

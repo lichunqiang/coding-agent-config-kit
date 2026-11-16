@@ -9,6 +9,11 @@ export interface KitPaths {
   lock: string;
 }
 
+export function statePathForOwner(configDir: string, ownerId: string): string {
+  const safe = ownerId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 64) || "owner";
+  return join(kitPaths(configDir).dir, `state-${safe}.json`);
+}
+
 export function kitPaths(configDir: string): KitPaths {
   const dir = join(configDir, KIT_STATE_DIR);
   return {
