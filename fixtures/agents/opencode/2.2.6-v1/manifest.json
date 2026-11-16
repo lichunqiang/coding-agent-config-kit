@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "agent": "opencode",
+  "version": "2.2.6",
+  "variant": "v1",
+  "configFormat": "v1",
+  "status": "installed-version",
+  "configOrigin": "synthetic-native-fixture",
+  "capturedAt": "2026-11-16",
+  "platform": "darwin",
+  "capture": {
+    "command": "opencode --version",
+    "output": "opencode v2.2.6"
+  },
+  "notes": "CLI version observed from the installed binary; opencode.jsonc uses the legacy V1 provider shape that V2 still accepts.",
+  "assertions": {
+    "preserveText": ["// keep-opencode-v1-marker", "keep-v1-model"],
+    "expectText": [
+      "fixture-provider",
+      "FIXTURE_KEY",
+      "fixture-model",
+      "@ai-sdk/openai-compatible",
+      "{env:FIXTURE_KEY}"
+    ]
+  }
+}

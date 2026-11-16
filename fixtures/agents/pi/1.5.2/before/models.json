@@ -1,0 +1,19 @@
+{
+  "$schema": "https://pi.dev/schemas/models.schema.json",
+  "providers": {
+    "keep": {
+      "name": "Keep",
+      "baseUrl": "https://keep.example.com/v1",
+      "api": "openai-completions",
+      "apiKey": "$KEEP_KEY",
+      "models": [
+        {
+          "id": "keep-model",
+          "name": "Keep Model",
+          "contextWindow": 8000,
+          "maxTokens": 1000
+        }
+      ]
+    }
+  }
+}

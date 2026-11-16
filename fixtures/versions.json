@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-16",
+  "platform": "darwin",
+  "agents": {
+    "claude-code": {
+      "version": "2.1.322",
+      "command": "claude --version",
+      "status": "installed"
+    },
+    "codex": {
+      "version": "0.167.1",
+      "command": "codex --version",
+      "status": "installed"
+    },
+    "gemini-cli": {
+      "version": null,
+      "command": "gemini --version",
+      "status": "not-installed"
+    },
+    "opencode": {
+      "version": "2.2.6",
+      "command": "opencode --version",
+      "status": "installed"
+    },
+    "pi": {
+      "version": "1.5.2",
+      "command": "pi --version",
+      "status": "installed"
+    },
+    "deepseek-harness": {
+      "version": "0.2.2-rc.3",
+      "command": "dsh --version",
+      "status": "installed"
+    }
+  }
+}

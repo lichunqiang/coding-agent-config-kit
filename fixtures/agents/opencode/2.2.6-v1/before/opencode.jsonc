@@ -1,0 +1,27 @@
+{
+  // keep-opencode-v1-marker
+  "model": "keep/keep-v1-model",
+  "provider": {
+    "keep": {
+      "name": "Keep",
+      "npm": "@ai-sdk/openai-compatible",
+      "api": "https://keep.example.com/v1",
+      "options": {
+        "apiKey": "{env:KEEP_KEY}"
+      },
+      "models": {
+        "keep-v1-model": {
+          "name": "Keep V1",
+          "limit": {
+            "context": 8000,
+            "output": 1000
+          },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          }
+        }
+      }
+    }
+  }
+}

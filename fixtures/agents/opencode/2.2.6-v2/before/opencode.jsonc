@@ -1,0 +1,29 @@
+{
+  // keep-opencode-marker
+  "model": "keep/keep-model",
+  "agents": {
+    "reviewer": {
+      "system": "keep review instructions"
+    }
+  },
+  "providers": {
+    "keep": {
+      "name": "Keep",
+      "env": ["KEEP_KEY"],
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": {
+        "baseURL": "https://keep.example.com/v1",
+        "apiKey": "{env:KEEP_KEY}"
+      },
+      "models": {
+        "keep-model": {
+          "name": "Keep Model",
+          "limit": {
+            "context": 8000,
+            "output": 1000
+          }
+        }
+      }
+    }
+  }
+}

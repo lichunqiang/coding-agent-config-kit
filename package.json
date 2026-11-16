@@ -28,7 +28,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "test:acceptance": "vitest run tests/acceptance",
+    "verify:agents": "node scripts/verify-agents.mjs"
   },
   "dependencies": {
     "@opencode-ai/models": "0.0.137",

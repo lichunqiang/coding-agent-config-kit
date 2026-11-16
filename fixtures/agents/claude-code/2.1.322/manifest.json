@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "agent": "claude-code",
+  "version": "2.1.322",
+  "variant": "default",
+  "status": "installed-version",
+  "configOrigin": "synthetic-native-fixture",
+  "capturedAt": "2026-11-16",
+  "platform": "darwin",
+  "capture": {
+    "command": "claude --version",
+    "output": "2.1.322 (Claude Code)"
+  },
+  "notes": "CLI version observed from the installed binary; settings.json uses synthetic values in Claude Code's native schema.",
+  "assertions": {
+    "preserveText": ["Bash(git status)", "KEEP_FLAG"],
+    "expectText": ["ANTHROPIC_BASE_URL", "https://api.anthropic.com", "fixture-model"]
+  }
+}

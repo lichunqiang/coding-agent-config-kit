@@ -67,7 +67,8 @@ planning. `inspectRecovery()` and `recover()` handle interrupted commits.
 - [x] Field-level capability resolution and projectability
 - [x] Pi, Claude Code, Codex, Gemini CLI, OpenCode (V1 and V2) and DeepSeek Harness adapters
 - [x] End-to-end `resolveAndPlan` / `apply` / `inspectRecovery` / `recover`
-- [ ] Full platform matrix for permissions and recovery edge cases
+- [x] Version-pinned acceptance fixtures for every installed Agent
+- [ ] Full runtime acceptance (agent startup) and platform recovery edge cases
 
 ## Development
 
@@ -81,6 +82,28 @@ pnpm check   # all of the above
 
 CI runs typecheck, tests and build on macOS, Windows and Linux with Node 20
 and 22.
+
+## Acceptance fixtures
+
+`fixtures/agents/<agent>/<version>/` pins a real CLI version to a native-format
+fixture. The fixture config uses synthetic, redacted values, so it proves the
+adapter writes the right shape and stays idempotent without committing user
+configuration:
+
+- versions captured on 2026-11-16 (Darwin): Claude Code `2.1.322`, Codex
+  `0.167.1`, OpenCode `2.2.6` (V1 and V2), Pi `1.5.2`, DeepSeek Harness
+  `0.2.2-rc.3`;
+- Gemini CLI was not installed, so its fixture is `unpinned` and explicitly
+  marked `not-installed`.
+
+```sh
+pnpm test:acceptance   # runs the fixture matrix
+pnpm verify:agents     # compares installed CLI --version output to the registry
+```
+
+`pnpm verify:agents` only executes `<binary> --version` with a temporary HOME;
+it never starts an agent or reads user configuration. Real startup acceptance is
+still manual.
 
 ## Adapters
 

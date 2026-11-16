@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "agent": "deepseek-harness",
+  "version": "0.2.2-rc.3",
+  "variant": "default",
+  "status": "installed-version",
+  "configOrigin": "synthetic-native-fixture",
+  "capturedAt": "2026-11-16",
+  "platform": "darwin",
+  "capture": {
+    "command": "dsh --version",
+    "output": "0.2.2-rc.3"
+  },
+  "notes": "CLI version observed from the installed binary; cordis.patch.yml uses synthetic values in the llm-pi-ai provider schema.",
+  "profile": "fixture",
+  "assertions": {
+    "preserveText": ["# keep-dsh-marker", "keep-model"],
+    "expectText": ["fixture-provider", "FIXTURE_KEY", "fixture-model"]
+  }
+}

@@ -1,0 +1,18 @@
+# keep-dsh-marker
+- id: llm-pi-ai
+  config:
+    providers:
+      keep:
+        displayName: Keep
+        apiKey: KEEP_KEY
+        api: openai-completions
+        baseURL: https://keep.example.com/v1
+        models:
+          - id: keep-model
+            name: Keep Model
+            contextWindow: 8000
+            maxTokens: 1000
+- id: agent-default-model
+  config:
+    provider: keep
+    model: keep-model

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "agent": "gemini-cli",
+  "version": "unpinned",
+  "variant": "default",
+  "status": "not-installed",
+  "configOrigin": "synthetic-native-fixture",
+  "capturedAt": "2026-11-16",
+  "platform": "darwin",
+  "capture": {
+    "command": "gemini --version",
+    "output": null
+  },
+  "notes": "Gemini CLI is not installed on the capture machine. The fixture exercises the documented native settings/.env shape and stays unpinned until a real capture replaces it.",
+  "assertions": {
+    "preserveText": ["keep-gemini-marker", "KEEP_VAR", "dark"],
+    "expectText": ["GOOGLE_GEMINI_BASE_URL", "fixture-model"]
+  }
+}

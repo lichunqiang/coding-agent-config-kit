@@ -1,0 +1,6 @@
+{
+  "theme": "dark",
+  "defaultProvider": "keep",
+  "defaultModel": "keep-model",
+  "enabledModels": ["keep/keep-model"]
+}

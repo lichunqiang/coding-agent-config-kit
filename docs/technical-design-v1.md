@@ -273,7 +273,7 @@ Pi 最小验收覆盖：ID-only `/models` 和完整能力响应、跨源自定�
 
 以下为**适配验证任务**，不改变已定产品边界。已在 2026-11 初步核对（以公开文档与本机安装为据，仍须按固定版本实测）：Codex 现行版本已移除 `wire_api = "chat"`，仅支持 Responses；Gemini CLI 存在 `GEMINI_CLI_HOME` 并在其下创建 `.gemini`；Pi `models.json` 的字段与默认值与本文一致；OpenCode V1/V2 共用同一文件且 `providers` 键会让 V1 报错；DSH 的 home 层优先于 profile 层。
 
-- 固定首批测试的 Agent 版本，逐项核对原生配置 schema、目录变量、环境/项目级优先级、凭据存储与默认模型选择；记录真实启动后的行为。
+- 固定首批测试的 Agent 版本，逐项核对原生配置 schema、目录变量、环境/项目级优先级、凭据存储与默认模型选择；记录真实启动后的行为。仓库已建立 `fixtures/agents/<agent>/<version>/` 与 `fixtures/versions.json`：版本来自本机 `--version`，配置夹具使用脱敏合成值；真实启动验收仍待执行。
 - Claude Code：核对企业 managed settings 的平台路径与优先级、`settings.json` 的 `env` 能否引用变量（预期不能）、四字段（`ANTHROPIC_MODEL` + 三档）的读取与覆盖关系、`agent-file` 明文文件的实际权限，以及 Bedrock/Vertex/Foundry 认证模式是否进入矩阵。
 - Codex：核对 `env_key` 与 `requires_openai_auth`、`http_headers` 的组合，系统/项目配置路径，以及 `model_providers` 是否需要模型目录文件。
 - Gemini CLI：核对不同认证状态（API Key / Google 登录 / Vertex）下自定义 base URL 是否真正生效、`.env` 加载优先级、`advanced.ignoreLocalEnv` 的影响。

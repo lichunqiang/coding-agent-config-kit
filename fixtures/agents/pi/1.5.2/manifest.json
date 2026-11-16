@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "agent": "pi",
+  "version": "1.5.2",
+  "variant": "default",
+  "status": "installed-version",
+  "configOrigin": "synthetic-native-fixture",
+  "capturedAt": "2026-11-16",
+  "platform": "darwin",
+  "capture": {
+    "command": "pi --version",
+    "output": "1.5.2"
+  },
+  "notes": "CLI version observed from the installed binary; config files use synthetic values in Pi's native schema.",
+  "assertions": {
+    "preserveText": ["keep-model", "Keep Model", "dark"],
+    "expectText": ["fixture-provider", "FIXTURE_KEY", "fixture-model"]
+  }
+}
