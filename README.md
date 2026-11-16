@@ -11,9 +11,10 @@ lock, recovery journal, management record) and public types are in place.
 
 - [x] TypeScript project, ESM + CJS build, Node 20+
 - [x] Atomic writes, lock protocol, recovery journal, ownership record
+- [x] Model discovery (OpenAI / Anthropic / Google formats, pagination)
+- [x] models.dev snapshot by default, explicit live mode with fallback
+- [x] Field-level capability resolution and projectability
 - [x] CI on macOS, Windows and Linux (Node 20/22)
-- [ ] Model discovery (OpenAI / Anthropic / Google formats)
-- [ ] models.dev snapshot + live modes
 - [ ] Agent adapters and default-model add-on
 - [ ] `resolveAndPlan` / `apply` / `inspectRecovery` / `recover`
 
