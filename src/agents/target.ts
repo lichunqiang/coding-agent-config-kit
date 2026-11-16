@@ -45,16 +45,20 @@ export async function resolveAgentTarget(
     });
   }
 
-  const defaultDir = defaultConfigDir(agent, profile);
+  const defaultDir = defaultConfigDir(agent, profile, target.launchEnvironment);
   const envDir = envValue === undefined ? undefined : envDerivedDir(agent, envValue, profile);
 
   let configDir: string;
   if (target.configDir !== undefined) {
     configDir = resolve(target.configDir);
-    if (
-      envDir !== undefined &&
-      resolve(envDir).toLowerCase() !== configDir.toLowerCase()
-    ) {
+    const envResolved = envDir === undefined ? undefined : resolve(envDir);
+    const samePath =
+      envResolved === undefined
+        ? true
+        : process.platform === "win32"
+          ? envResolved.toLowerCase() === configDir.toLowerCase()
+          : envResolved === configDir;
+    if (!samePath) {
       blockers.push({
         code: "TARGET_ENV_MISMATCH",
         severity: "error",
@@ -99,7 +103,11 @@ export async function resolveAgentTarget(
   return resolvedTarget;
 }
 
-function defaultConfigDir(agent: AgentId, profile: string | undefined): string {
+function defaultConfigDir(
+  agent: AgentId,
+  profile: string | undefined,
+  launchEnvironment: Target["launchEnvironment"],
+): string {
   const home = homedir();
   switch (agent) {
     case "claude-code":
@@ -109,7 +117,10 @@ function defaultConfigDir(agent: AgentId, profile: string | undefined): string {
     case "gemini-cli":
       return join(home, ".gemini");
     case "opencode":
-      return join(process.env.XDG_CONFIG_HOME ?? join(home, ".config"), "opencode");
+      return join(
+        launchEnvironment?.XDG_CONFIG_HOME ?? join(home, ".config"),
+        "opencode",
+      );
     case "pi":
       return join(home, ".pi", "agent");
     case "deepseek-harness":

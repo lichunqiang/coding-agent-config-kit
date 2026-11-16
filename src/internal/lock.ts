@@ -56,6 +56,16 @@ export class TargetLock {
         } finally {
           await handle.close();
         }
+        const reread = await readLockHolder(path);
+        if (reread === null || reread.transactionId !== holder.transactionId) {
+          throw new ConfigKitError({
+            code: "LOCK_TIMEOUT",
+            message: "Lock content changed immediately after creation",
+            phase: "lock",
+            path,
+            retryable: true,
+          });
+        }
         return new TargetLock(path, holder);
       } catch (error) {
         if (!isCode(error, "EEXIST")) throw wrapIoError(error, path, "write");

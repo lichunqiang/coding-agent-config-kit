@@ -229,6 +229,30 @@ describe("recovery", () => {
     expect(await readFile(path, "utf8")).toBe("third-party\n");
   });
 
+  it("can restore the old content explicitly", async () => {
+    const path = join(dir, "models.json");
+    const before = '{"providers":{}}\n';
+    const after = '{"providers":{"company":{}}}\n';
+    await writeFile(path, after, "utf8");
+    await writeJournal(kitPaths(dir).recovery, {
+      schemaVersion: 1,
+      transactionId: "tx",
+      ownerId: "owner",
+      agent: "pi",
+      configDir: dir,
+      status: "committing",
+      createdAt: new Date().toISOString(),
+      files: [{ path, before: snapshot(before), after: snapshot(after) }],
+    });
+
+    const result = await kit.recover(
+      { agent: "pi", target: { configDir: dir } },
+      { mode: "restore-old" },
+    );
+    expect(result.status).toBe("restored");
+    expect(await readFile(path, "utf8")).toBe(before);
+  });
+
   it("reports a pending recovery record", async () => {
     await writeJournal(kitPaths(dir).recovery, {
       schemaVersion: 1,

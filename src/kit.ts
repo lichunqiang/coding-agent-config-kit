@@ -291,6 +291,14 @@ class ConfigKitImpl implements ConfigKit {
       blockers.push(...resolution.blockers);
     }
 
+    if (request.provider !== undefined && resolvedModels.length === 0) {
+      warnings.push({
+        code: "MODELS_EMPTY",
+        severity: "warning",
+        message: "No models will be registered for this provider",
+      });
+    }
+
     const intents: SemanticIntent[] =
       request.provider === undefined
         ? []
@@ -495,10 +503,10 @@ class ConfigKitImpl implements ConfigKit {
           await atomicWriteFile(internal.statePath, internal.stateAfter ?? "", { mode: 0o600 });
         }
       } catch (error) {
-        await restoreWritten(written);
-        await removeJournal(journalPath);
+        const restored = await restoreWritten(written);
+        if (restored) await removeJournal(journalPath);
         return {
-          status: "restored",
+          status: restored ? "restored" : "manual-intervention",
           files: written.map(({ file, action }) => ({ path: file.path, action })),
           effects: internal.effects,
           warnings: internal.warnings,
@@ -615,6 +623,23 @@ class ConfigKitImpl implements ConfigKit {
         files: [],
         effects: { defaultModelChanged: false, currentConnectionChanged: false },
         warnings: [],
+      };
+    }
+    if (
+      record.ownerId !== this.options.ownerId ||
+      record.agent !== request.agent
+    ) {
+      return {
+        status: "manual-intervention",
+        files: [],
+        effects: { defaultModelChanged: false, currentConnectionChanged: false },
+        warnings: [
+          {
+            code: "RECOVERY_OWNER_MISMATCH",
+            severity: "error",
+            message: "Recovery record belongs to another owner or agent",
+          },
+        ],
       };
     }
 
@@ -983,7 +1008,8 @@ function contentOf(snapshot: ContentSnapshot): Buffer | null {
 
 async function restoreWritten(
   written: Array<{ file: PlannedFile }>,
-): Promise<void> {
+): Promise<boolean> {
+  let ok = true;
   for (const { file } of [...written].reverse()) {
     try {
       if (file.before === null) {
@@ -992,9 +1018,11 @@ async function restoreWritten(
         await atomicWriteFile(file.path, file.before, { mode: file.mode ?? 0o600 });
       }
     } catch {
-      // Best effort: the journal remains for the next recovery attempt.
+      // Keep the journal for the next recovery attempt.
+      ok = false;
     }
   }
+  return ok;
 }
 
 function failedResult(
