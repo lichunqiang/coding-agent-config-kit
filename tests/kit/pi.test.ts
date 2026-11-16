@@ -145,6 +145,29 @@ describe("Pi vertical slice", () => {
     await expect(kit.apply(plan)).rejects.toMatchObject({ code: "UNSAFE_TARGET" });
   });
 
+  it("rejects an invalid provider baseUrl", async () => {
+    await expect(
+      kit.resolveAndPlan(
+        request({
+          provider: {
+            ...request().provider!,
+            baseUrl: "not a url",
+          },
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "NETWORK_POLICY_DENIED" });
+  });
+
+  it("rejects model discovery without a provider", async () => {
+    await expect(
+      kit.resolveAndPlan({
+        agent: "pi",
+        target: { configDir: dir },
+        models: { discovery: {} },
+      }),
+    ).rejects.toMatchObject({ code: "UNSUPPORTED_INTENT" });
+  });
+
   it("detects a configDir/launchEnvironment mismatch", async () => {
     const plan = await kit.resolveAndPlan(
       request({

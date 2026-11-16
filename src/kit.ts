@@ -146,7 +146,42 @@ class ConfigKitImpl implements ConfigKit {
     }
 
     const adapter = getAdapter(request.agent);
+    if (
+      request.provider === undefined &&
+      request.models?.discovery !== undefined
+    ) {
+      throw new ConfigKitError({
+        code: "UNSUPPORTED_INTENT",
+        message: "Model discovery requires a provider",
+        agent: request.agent,
+        phase: "validate",
+        field: "models.discovery",
+      });
+    }
     if (request.provider !== undefined) {
+      let parsedBaseUrl: URL;
+      try {
+        parsedBaseUrl = new URL(request.provider.baseUrl);
+      } catch (error) {
+        throw new ConfigKitError({
+          code: "NETWORK_POLICY_DENIED",
+          message: `Invalid provider baseUrl: ${request.provider.baseUrl}`,
+          agent: request.agent,
+          phase: "validate",
+          field: "provider.baseUrl",
+          cause: error,
+        });
+      }
+      if (parsedBaseUrl.protocol !== "http:" && parsedBaseUrl.protocol !== "https:") {
+        throw new ConfigKitError({
+          code: "NETWORK_POLICY_DENIED",
+          message: `Unsupported provider baseUrl protocol: ${parsedBaseUrl.protocol}`,
+          agent: request.agent,
+          phase: "validate",
+          field: "provider.baseUrl",
+        });
+      }
+
       if (!adapter.protocols.includes(request.provider.protocol)) {
         throw new ConfigKitError({
           code: "UNSUPPORTED_PROTOCOL",
