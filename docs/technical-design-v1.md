@@ -1,6 +1,6 @@
 # coding-agent-config-kit：第一版技术设计草案
 
-状态：设计已讨论，尚未实现或完成目标 Agent 的版本兼容性验收。本文区分**已确定的产品/安全契约**与**实现前需要验证的适配细节**。第一版使用 TypeScript，面向 Node.js 本地文件系统；平台范围为 macOS、Windows 与 POSIX（Linux 等）；上层账号切换应用是主要使用者。
+状态：v0.1 已按本文实现（六个适配器、端到端计划/提交/恢复、103 项自动化测试、macOS/Windows/Linux CI），**尚未完成真实 Agent 版本的兼容性验收**；第 9 节的适配验证任务仍需执行。本文区分**已确定的产品/安全契约**与**实现前需要验证的适配细节**。第一版使用 TypeScript，面向 Node.js 本地文件系统；平台范围为 macOS、Windows 与 POSIX（Linux 等）；上层账号切换应用是主要使用者。
 
 ## 1. 目标与边界
 
@@ -306,3 +306,4 @@ Pi 最小验收覆盖：ID-only `/models` 和完整能力响应、跨源自定�
 - 2026-11-16（决定稿）：Claude Code 只处理四字段，旧变量按 `UNSUPPORTED_INTENT`；允许 Claude 使用 `agent-file`；DSH 默认只写 profile 层；版本探测默认关闭；恢复记录 TTL 缩为 1 小时；陈旧锁不自动接管、仅显式 `break-stale-lock`；同目标排队、不同目标可并发；发布基线定为 Node 20+ 与 ESM 优先；models.dev 改用官方 `@opencode-ai/models`；Windows 不调用系统 ACL API。
 - 2026-11-16（定稿）：models.dev 默认使用包内快照（`generatedAt` 标注，live 显式开启）；补版本探测白名单与执行约束；包名定为不带 scope 的 `coding-agent-config-kit`，MIT；`previewSchemaVersion` 起始值 1。
 - 2026-11-16（补记）：保留 live 模式但仅允许显式开启，快照过期不自动联网；预览与验收补充 models.dev 数据来源标注。
+- 2026-11-16（实现完成 v0.1）：六个适配器与公共编排落地；103 项测试与三平台 CI 通过；仍待真实 Agent 版本验收。
