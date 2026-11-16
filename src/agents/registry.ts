@@ -2,12 +2,16 @@ import type { AgentId } from "../types.js";
 import { ConfigKitError } from "../errors.js";
 import { claudeAdapter } from "./claude.js";
 import { codexAdapter } from "./codex.js";
+import { dshAdapter } from "./dsh.js";
+import { geminiAdapter } from "./gemini.js";
 import { piAdapter } from "./pi.js";
 import type { AgentAdapter } from "./types.js";
 
 const ADAPTERS: Partial<Record<AgentId, AgentAdapter>> = {
   "claude-code": claudeAdapter,
   codex: codexAdapter,
+  "gemini-cli": geminiAdapter,
+  "deepseek-harness": dshAdapter,
   pi: piAdapter,
 };
 
