@@ -4,8 +4,9 @@ Plan and safely apply third-party provider/model configuration for coding
 agents. The design contract lives in
 [docs/technical-design-v1.md](docs/technical-design-v1.md).
 
-> Status: the **Pi adapter** works end to end (`resolveAndPlan`, `apply`,
-> `inspectRecovery`, `recover`). The other five adapters are still pending.
+> Status: **Pi** and **Claude Code** adapters work end to end
+> (`resolveAndPlan`, `apply`, `inspectRecovery`, `recover`). The other four
+> adapters are still pending.
 
 ## Install
 
@@ -64,9 +65,9 @@ planning. `inspectRecovery()` and `recover()` handle interrupted commits.
 - [x] Model discovery (OpenAI / Anthropic / Google formats, pagination)
 - [x] models.dev snapshot by default, explicit live mode with fallback
 - [x] Field-level capability resolution and projectability
-- [x] Pi adapter and `defaultModel` add-on
-- [x] Pi `resolveAndPlan` / `apply` / `inspectRecovery` / `recover`
-- [ ] Claude Code, Codex, Gemini CLI, OpenCode, DeepSeek Harness adapters
+- [x] Pi and Claude Code adapters and the `defaultModel` add-on
+- [x] End-to-end `resolveAndPlan` / `apply` / `inspectRecovery` / `recover`
+- [ ] Codex, Gemini CLI, OpenCode, DeepSeek Harness adapters
 - [ ] Full platform matrix for permissions and recovery
 
 ## Development

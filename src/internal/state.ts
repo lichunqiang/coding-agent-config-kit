@@ -5,7 +5,12 @@ import { ConfigKitError } from "../errors.js";
 import type { AgentId } from "../types.js";
 import { atomicWriteFile, ensurePrivateDir, isCode } from "./fs.js";
 
-export type ManagedEntryKind = "provider" | "model" | "default-model" | "field";
+export type ManagedEntryKind =
+  | "provider"
+  | "model"
+  | "default-model"
+  | "connection"
+  | "field";
 
 export interface ManagedEntry {
   kind: ManagedEntryKind;
